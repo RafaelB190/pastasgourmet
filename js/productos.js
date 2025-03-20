@@ -1,87 +1,63 @@
-import {
-  actualizarContadorCarrito,
-  agregarAlCarrito,
-  Producto,
-  verificarImagen,
-} from "./main.js";
+import Swal from "sweetalert2";
+import "../css/styles.css";
+let todosLosProductos = [];
+let carrito;
 
-async function cargarProductos() {
-  try {
-    const paginaActual = window.location.pathname;
-    const esSubpagina = paginaActual.includes("/page/");
+class Carrito {
+  constructor() {
+    this.productos = [];
+  }
 
-    const jsonPath = esSubpagina
-      ? "../assets/data/data.json"
-      : "./assets/data/data.json";
+  agregarProducto(producto) {
+    this.productos.push(producto);
+    this.actualizarLocalStorage();
+  }
 
-    console.log("Intentando cargar productos desde:", jsonPath);
-
-    const response = await fetch(jsonPath);
-    console.log("Response status:", response.status);
-
-    if (!response.ok) {
-      console.error("Response text:", await response.text());
-      throw new Error("No se pudieron cargar los productos");
-    }
-
-    const data = await response.json();
-    console.log("Datos cargados:", data);
-
-    todosLosProductos = await Promise.all(
-      data.productos.map(async (item) => {
-        const rutaImagen = esSubpagina ? `../${item.imagen}` : item.imagen;
-        console.log("Verificando imagen:", rutaImagen);
-
-        const categoria = item.nombre.toLowerCase().includes("salsa")
-          ? "salsas"
-          : "pastas";
-
-        const imagenExiste = await verificarImagen(rutaImagen);
-        console.log(`Imagen ${rutaImagen} existe: ${imagenExiste}`);
-
-        const imagenFinal = imagenExiste
-          ? rutaImagen
-          : esSubpagina
-          ? "../assets/image/placeholder.jpeg"
-          : "./assets/image/placeholder.jpeg";
-
-        return new Producto(
-          item.id,
-          item.nombre,
-          item.precio,
-          imagenFinal,
-          item.descripcion,
-          categoria
-        );
-      })
+  eliminarProducto(productoId) {
+    this.productos = this.productos.filter(
+      (producto) => producto.id !== productoId
     );
+    this.actualizarLocalStorage();
+  }
 
-    console.log("Productos cargados:", todosLosProductos);
+  obtenerProductos() {
+    return this.productos;
+  }
 
-    if (paginaActual.includes("productos.html")) {
-      mostrarProductosPorCategoria();
-    } else {
-      mostrarProductosDestacados();
+  actualizarLocalStorage() {
+    localStorage.setItem("carrito", JSON.stringify(this.productos));
+  }
+
+  cargarDesdeLocalStorage() {
+    const carritoGuardado = localStorage.getItem("carrito");
+    if (carritoGuardado) {
+      this.productos = JSON.parse(carritoGuardado);
     }
+  }
+}
 
-    if (typeof actualizarContadorCarrito === "function") {
-      actualizarContadorCarrito();
-    }
+class Producto {
+  constructor(id, nombre, precio, imagen, descripcion, categoria) {
+    this.id = id;
+    this.nombre = nombre;
+    this.precio = precio;
+    this.imagen = imagen;
+    this.descripcion = descripcion;
+    this.categoria = categoria || this.determinarCategoria(nombre);
+  }
+
+  determinarCategoria(nombre) {
+    return nombre.toLowerCase().includes("salsa") ? "salsas" : "pastas";
+  }
+}
+
+async function verificarImagen(url) {
+  try {
+    const response = await fetch(url, { method: "HEAD" });
+    return response.ok;
   } catch (error) {
-    console.error("Error al cargar productos:", error);
-
-    if (typeof Swal !== "undefined") {
-      Swal.fire({
-        title: "Error",
-        text: "No se pudieron cargar los productos. Intente nuevamente más tarde.",
-        icon: "error",
-        confirmButtonText: "Aceptar",
-      });
-    } else {
-      alert(
-        "No se pudieron cargar los productos. Intente nuevamente más tarde."
-      );
-    }
+    console.error(`Error al verificar la imagen:`, error);
+    return false;
   }
 }
 
@@ -172,7 +148,7 @@ function mostrarProductos(productos) {
     productosExistentes.remove();
   }
 
-  if (!filtrosContainer) {
+  if (!filtrosContainer && !contenedor.querySelector("h2")) {
     const titulo = document.createElement("h2");
     titulo.textContent = "Nuestros Productos";
     titulo.className = "text-2xl font-bold mb-4";
@@ -193,8 +169,8 @@ function mostrarProductos(productos) {
     imagen.onerror = function () {
       console.error(`Error al cargar la imagen: ${producto.imagen}`);
       this.src = window.location.pathname.includes("/page/")
-        ? "../assets/imagen/placeholder.jpeg"
-        : "assets/imagen/placeholder.jpeg";
+        ? "../assets/image/placeholder.jpeg"
+        : "assets/image/placeholder.jpeg";
       this.alt = "Imagen no disponible";
     };
 
@@ -214,9 +190,7 @@ function mostrarProductos(productos) {
     boton.className = "btn-agregar";
 
     boton.addEventListener("click", () => {
-      if (typeof agregarAlCarrito === "function") {
-        agregarAlCarrito(producto);
-      }
+      agregarAlCarrito(producto);
     });
 
     card.appendChild(imagen);
@@ -230,3 +204,35 @@ function mostrarProductos(productos) {
 
   contenedor.appendChild(productosGrid);
 }
+
+function agregarAlCarrito(producto) {
+  if (!window.carrito) {
+    window.carrito = new Carrito();
+  }
+
+  window.carrito.agregarProducto(producto);
+
+  if (typeof Swal !== "undefined") {
+    Swal.fire({
+      title: "¡Producto agregado!",
+      text: `${producto.nombre} se ha agregado al carrito`,
+      icon: "success",
+      toast: true,
+      position: "top-end",
+      showConfirmButton: false,
+      timer: 2000,
+      timerProgressBar: true,
+    });
+  } else {
+    alert(`${producto.nombre} se ha agregado al carrito`);
+  }
+
+  if (typeof window.actualizarContadorCarrito === "function") {
+    window.actualizarContadorCarrito();
+  }
+}
+
+window.Producto = Producto;
+window.verificarImagen = verificarImagen;
+window.cargarProductos = cargarProductos;
+window.agregarAlCarrito = agregarAlCarrito;

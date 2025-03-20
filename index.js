@@ -1,15 +1,23 @@
+"use client";
 import React from "react";
-import ReactDOM from "react-dom";
-import { inicializarBotonCarrito } from "./js/carrito.js";
-import { cargarProductos } from "./js/productos.js";
+import { createRoot } from "react-dom/client";
+import "./css/styles.css";
+import { cargarProductos, inicializarBotonCarrito } from "./js/main.js";
 
 const App = () => {
   React.useEffect(() => {
-    cargarProductos();
-    inicializarBotonCarrito();
+    inicializarApp();
   }, []);
 
-  return <h1>PAstasGourmet</h1>;
+  return <div id="app-root">PastasGourmet</div>;
 };
-
-ReactDOM.render(<App />, document.getElementById("root"));
+function inicializarApp() {
+  inicializarBotonCarrito();
+  cargarProductos();
+  console.log("Aplicación inicializada correctamente");
+}
+const rootElement = document.getElementById("root");
+if (rootElement) {
+  const root = createRoot(rootElement);
+  root.render(<App />);
+}

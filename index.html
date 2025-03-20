@@ -4,7 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tienda de Pasta</title>
-    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="/css/styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   </head>
   <body
     class="bg-cover bg-center"
@@ -26,6 +27,11 @@
               <a href="page/contacto.html" class="hover:text-gray-500"
                 >Contacto</a
               >
+            </li>
+            <li>
+              <button id="carrito-button" class="hover:text-gray-500">
+                Carrito
+              </button>
             </li>
           </ul>
         </nav>
@@ -88,7 +94,7 @@
       </div>
     </footer>
 
-    <script type="module" src="bundle.js"></script>
-    <script type="module" src="js/main.js"></script>
+    <script src="bundle.js"></script>
+    <script src="js/main.js"></script>
   </body>
 </html>

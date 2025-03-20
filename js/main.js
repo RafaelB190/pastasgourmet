@@ -1,4 +1,6 @@
+import Swal from "sweetalert2";
 import "../css/styles.css";
+let carrito;
 let todosLosProductos = [];
 
 class Producto {
@@ -114,8 +116,6 @@ class Carrito {
   }
 }
 
-const carrito = new Carrito();
-
 async function verificarImagen(url) {
   try {
     const response = await fetch(url, { method: "HEAD" });
@@ -128,12 +128,12 @@ async function verificarImagen(url) {
 
 async function cargarProductos() {
   try {
-    const paginaActual = window.location.pathname;
+    const paginaActual = window.location.href;
     const esSubpagina = paginaActual.includes("/page/");
 
     const jsonPath = esSubpagina
       ? "../assets/data/data.json"
-      : "./assets/data/data.json";
+      : "assets/data/data.json";
 
     console.log("Intentando cargar productos desde:", jsonPath);
 
@@ -179,7 +179,8 @@ async function cargarProductos() {
 
     console.log("Productos cargados:", todosLosProductos);
 
-    if (paginaActual.includes("productos.html")) {
+    const currentPage = window.location.href;
+    if (currentPage.includes("productos.html")) {
       mostrarProductosPorCategoria();
     } else {
       mostrarProductosDestacados();
@@ -206,6 +207,10 @@ async function cargarProductos() {
 
 function mostrarProductosPorCategoria() {
   const contenedor = document.getElementById("productos-container");
+  if (!contenedor) {
+    console.error("No se encontró el contenedor de productos");
+    return;
+  }
   if (!contenedor) {
     console.error("No se encontró el contenedor de productos");
     return;
@@ -312,8 +317,8 @@ function mostrarProductos(productos) {
     imagen.onerror = function () {
       console.error(`Error al cargar la imagen: ${producto.imagen}`);
       this.src = window.location.pathname.includes("/page/")
-        ? "../assets/imagen/placeholder.jpeg"
-        : "assets/imagen/placeholder.jpeg";
+        ? "../assets/image/placeholder.jpeg"
+        : "assets/image/placeholder.jpeg";
       this.alt = "Imagen no disponible";
     };
 
@@ -349,6 +354,10 @@ function mostrarProductos(productos) {
 }
 
 function agregarAlCarrito(producto) {
+  if (!window.carrito) {
+    window.carrito = new Carrito();
+    carrito = window.carrito;
+  }
   carrito.agregarProducto(producto);
 
   if (typeof Swal !== "undefined") {
@@ -367,13 +376,6 @@ function agregarAlCarrito(producto) {
   }
 
   actualizarContadorCarrito();
-}
-
-function actualizarContadorCarrito() {
-  const contador = document.getElementById("carrito-contador");
-  if (contador) {
-    contador.textContent = carrito.obtenerCantidadTotal();
-  }
 }
 
 function generarHTMLCarrito() {
@@ -787,6 +789,10 @@ function manejarEnvioFormulario() {
 }
 
 function inicializarBotonCarrito() {
+  if (!window.carrito) {
+    window.carrito = new Carrito();
+    carrito = window.carrito;
+  }
   const btnVerCarrito = document.createElement("button");
   btnVerCarrito.textContent = "Ver Carrito";
   btnVerCarrito.className = "btn-carrito";
@@ -794,6 +800,10 @@ function inicializarBotonCarrito() {
 
   const header = document.querySelector("header");
   if (header) {
+    const existingButton = header.querySelector(".btn-carrito");
+    if (existingButton) {
+      return;
+    }
     const contadorCarrito = document.createElement("span");
     contadorCarrito.id = "carrito-contador";
     contadorCarrito.textContent = carrito.obtenerCantidadTotal();
@@ -803,24 +813,42 @@ function inicializarBotonCarrito() {
     header.appendChild(btnVerCarrito);
   }
 }
-
+function agregarEventoCarrito() {
+  const carritoButton = document.getElementById("carrito-button");
+  if (carritoButton) {
+    carritoButton.addEventListener("click", mostrarCarrito);
+  }
+}
+function actualizarContadorCarrito() {
+  const contador = document.getElementById("carrito-contador");
+  if (contador && carrito) {
+    contador.textContent = carrito.obtenerCantidadTotal();
+  }
+}
 function inicializar() {
   console.log("Inicializando aplicación...");
+  window.carrito = new Carrito();
+  carrito = window.carrito;
 
   inicializarBotonCarrito();
+  agregarEventoCarrito();
 
   cargarProductos();
 
   manejarEnvioFormulario();
 }
 
-import Swal from "sweetalert2";
-
 document.addEventListener("DOMContentLoaded", inicializar);
 
+window.Producto = Producto;
+window.ItemCarrito = ItemCarrito;
+window.Carrito = Carrito;
+window.verificarImagen = verificarImagen;
+window.cargarProductos = cargarProductos;
 window.agregarAlCarrito = agregarAlCarrito;
 window.actualizarContadorCarrito = actualizarContadorCarrito;
 window.mostrarCarrito = mostrarCarrito;
+window.inicializarBotonCarrito = inicializarBotonCarrito;
 window.aumentarCantidad = (id) => {
   carrito.aumentarCantidad(id);
   actualizarContadorCarrito();
@@ -836,4 +864,16 @@ window.eliminarDelCarrito = (id) => {
 window.vaciarCarrito = () => {
   carrito.vaciarCarrito();
   actualizarContadorCarrito();
+};
+
+export {
+  actualizarContadorCarrito,
+  agregarAlCarrito,
+  cargarProductos,
+  Carrito,
+  inicializarBotonCarrito,
+  ItemCarrito,
+  mostrarCarrito,
+  Producto,
+  verificarImagen,
 };

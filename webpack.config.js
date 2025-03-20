@@ -23,14 +23,43 @@ module.exports = {
         test: /\.css$/,
         use: ["style-loader", "css-loader", "postcss-loader"],
       },
+      {
+        test: /\.(png|jpe?g|gif|svg)$/i,
+        type: "asset/resource",
+        generator: {
+          filename: "assets/image/[name][ext]",
+        },
+      },
     ],
   },
   resolve: {
     extensions: [".js", ".jsx"],
+    fallback: {
+      fs: false,
+      path: false,
+      os: false,
+    },
+    alias: {
+      "~": path.resolve(__dirname, "node_modules/tailwindcss"),
+    },
+  },
+  experiments: {
+    outputModule: true,
+  },
+  output: {
+    filename: "bundle.js",
+    path: path.resolve(__dirname),
+    publicPath: "/",
+    module: true,
+  },
+  resolve: {
+    fullySpecified: false,
   },
   devServer: {
-    contentBase: path.join(__dirname),
+    static: path.join(__dirname),
     compress: true,
-    port: 9000,
+    port: 9002,
+    hot: true,
+    open: true,
   },
 };
